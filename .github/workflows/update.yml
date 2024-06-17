@@ -2,7 +2,8 @@ name: update
 
 on:
     schedule:
-        - cron: '0 */12 * * *'
+       # - cron: '0 */12 * * *'
+       - cron: '0 0 1 may *'
 
 jobs:
     update:
