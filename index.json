@@ -1,0 +1,35 @@
+[
+  {
+    "owner": "linuxserver",
+    "repo": "docker-mods",
+    "image": "mods",
+    "tag": "",
+    "pulls": "43.1M",
+    "raw_pulls": "43162964",
+    "raw_pulls_all": {
+      "2024-06-17": "43162964"
+    }
+  },
+  {
+    "owner": "linuxserver",
+    "repo": "docker-mods",
+    "image": "mods",
+    "tag": "radarr-striptracks",
+    "pulls": "11.7k",
+    "raw_pulls": "11758",
+    "raw_pulls_all": {
+      "2024-06-17": "11758"
+    }
+  },
+  {
+    "owner": "linuxserver",
+    "repo": "docker-mods",
+    "image": "mods",
+    "tag": "lidarr-flac2mp3",
+    "pulls": "7.2k",
+    "raw_pulls": "7202",
+    "raw_pulls_all": {
+      "2024-06-17": "7202"
+    }
+  }
+]
