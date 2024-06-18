@@ -1,3 +1,2 @@
-linuxserver/docker-mods/mods
 linuxserver/docker-mods/mods/lidarr-flac2mp3
 linuxserver/docker-mods/mods/radarr-striptracks
