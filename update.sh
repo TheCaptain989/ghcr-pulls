@@ -50,7 +50,8 @@ while IFS= read -r line; do
         raw_pulls=$(echo -e "$html" | grep -Pzo '(?<=Total downloads</span>\n          <h3 title=")\d*')
     fi
     [[ "$raw_pulls" =~ ^[0-9]+$ ]] || continue
-    pulls=$(echo "$raw_pulls" | awk '{ split("k M B T P E Z Y", v); s=0; while( $1>999.9 ) { $1/=1000; s++ } print int($1*10)/10 v[s] }') || pulls=-1
+    #pulls=$(echo "$raw_pulls" | awk '{ split("k M B T P E Z Y", v); s=0; while( $1>999.9 ) { $1/=1000; s++ } print int($1*10)/10 v[s] }') || pulls=-1
+    pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
 
     jq --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" --arg pulls "$pulls" --arg raw_pulls "$raw_pulls" --arg date "$date" '
