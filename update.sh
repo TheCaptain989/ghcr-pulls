@@ -35,7 +35,6 @@ while IFS= read -r line; do
     #fi
 
     # use xmllint and walk through version pages if querying tags
-    xmllint --version
     if [ -n "$tag" ]; then
       pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Pzo '(?<=<em class="current" data-total-pages=")\d*')
       [ -z "$pages" ] && pages=1
