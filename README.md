@@ -2,9 +2,9 @@
 
 ## JSON Endpoint for GHCR Badges
 
-Makes the pull count badge possible for these ghcr.io packages:
+Makes the pull count badge possible for these ghcr.io packages and tags:
 
-[![linuxserver/docker-mods/mods/radarr-striptracks](https://img.shields.io/badge/dynamic/json?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json&query=%24%5B%3F(%40.owner%3D%3D%22linuxserver%22%20%26%26%20%40.repo%3D%3D%22docker-mods%22%20%26%26%20%40.image%3D%3D%22mods%22%20%26%26%20%40.tag%3D%3D%22radarr-striptracks%22)%5D.pulls&label=mods/radarr-striptracks)](https://github.com/linuxserver/docker-mods/pkgs/container/mods) [![linuxserver/docker-mods/mods/lidarr-flac2mp3](https://img.shields.io/badge/dynamic/json?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json&query=%24%5B%3F(%40.owner%3D%3D%22linuxserver%22%20%26%26%20%40.repo%3D%3D%22docker-mods%22%20%26%26%20%40.image%3D%3D%22mods%22%20%26%26%20%40.tag%3D%3D%22lidarr-flac2mp3%22)%5D.pulls&label=mods/lidarr-flac2mp3)](https://github.com/linuxserver/docker-mods/pkgs/container/mods)
+[![linuxserver/docker-mods/mods/](https://img.shields.io/badge/dynamic/json?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json&query=%24%5B%3F(%40.owner%3D%3D%22linuxserver%22%20%26%26%20%40.repo%3D%3D%22docker-mods%22%20%26%26%20%40.image%3D%3D%22mods%22%20%26%26%20%40.tag%3D%3D%22%22)%5D.pulls&label=mods)](https://github.com/linuxserver/docker-mods/pkgs/container/mods) [![linuxserver/docker-mods/mods/radarr-striptracks](https://img.shields.io/badge/dynamic/json?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json&query=%24%5B%3F(%40.owner%3D%3D%22linuxserver%22%20%26%26%20%40.repo%3D%3D%22docker-mods%22%20%26%26%20%40.image%3D%3D%22mods%22%20%26%26%20%40.tag%3D%3D%22radarr-striptracks%22)%5D.pulls&label=mods/radarr-striptracks)](https://github.com/linuxserver/docker-mods/pkgs/container/mods) [![linuxserver/docker-mods/mods/lidarr-flac2mp3](https://img.shields.io/badge/dynamic/json?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json&query=%24%5B%3F(%40.owner%3D%3D%22linuxserver%22%20%26%26%20%40.repo%3D%3D%22docker-mods%22%20%26%26%20%40.image%3D%3D%22mods%22%20%26%26%20%40.tag%3D%3D%22lidarr-flac2mp3%22)%5D.pulls&label=mods/lidarr-flac2mp3)](https://github.com/linuxserver/docker-mods/pkgs/container/mods)
 
 ### Custom Badges
 
@@ -31,4 +31,3 @@ $[?(@.owner=="<USER>" && @.repo=="<REPO>" && @.image=="<IMAGE>" && @.tag=="<TAG>
 ```markdown
 $[?(@.owner=="<USER>" && @.repo=="<REPO>" && @.image=="<IMAGE>" && @.tag=="<TAG>")].raw_pulls
 ```
-
