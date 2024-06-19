@@ -38,25 +38,24 @@ while IFS= read -r line; do
     if [ -n "$tag" ]; then
       pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Pzo '(?<=<em class="current" data-total-pages=")\d*')
       [ -z "$pages" ] && pages=1
-      echo "Total Pages: $pages"
+      printf "Crawling $owner/$repo/$image/$tag total pages $pages : "
       for i in $(seq 1 "$pages"); do
          curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" >page.html
          raw_pulls=$(xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" page.html 2>/dev/null | tr -d '\f\n, ')
-         echo "Page $i: $owner/$repo/$image/$tag = $raw_pulls"
+         printf "$i"
          [ -n "$raw_pulls" ] && break
+         [ "$i" -ne "$pages" ] && printf ","
       done
+      printf "\n"
       rm page.html
     else
         # get the number of pulls, skipping nans
         html=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image")
         raw_pulls=$(echo -e "$html" | grep -Pzo '(?<=Total downloads</span>\n          <h3 title=")\d*')
-        echo "Pulls: $owner/$repo/$image = $raw_pulls"
     fi
-    [[ "$raw_pulls" =~ ^[0-9]+$ ]] || continue
-    #pulls=$(echo "$raw_pulls" | awk '{ split("k M B T P E Z Y", v); s=0; while( $1>999.9 ) { $1/=1000; s++ } print int($1*10)/10 v[s] }') || pulls=-1
     pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
-    echo "Pretty Pulls: $owner/$repo/$image/$tag = $pulls ($date)"
+    printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
 
     jq --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" --arg pulls "$pulls" --arg raw_pulls "$raw_pulls" --arg date "$date" '
         if . == [] then
@@ -73,9 +72,8 @@ jq 'sort_by(.raw_pulls | tonumber) | reverse' index.json >index.tmp.json
 mv index.tmp.json index.json
 
 # update the README template with badges...
-[ ! -f README.md ] || rm -f README.md # remove the old README
+[ -f README.md ] || rm -f README.md   # remove the old README
 \cp .README.md README.md              # copy the template
-echo "Total pulls:"
 for i in $(jq -r '.[] | @base64' index.json); do
     _jq() {
         echo "$i" | base64 --decode | jq -r "$@"
@@ -88,7 +86,6 @@ for i in $(jq -r '.[] | @base64' index.json); do
     pulls=$(_jq '.pulls')
     raw_pulls=$(_jq '.raw_pulls')
     export owner repo image tag
-    printf "%s (%s) %s/%s/%s/%s\n" "$pulls" "$raw_pulls" "$owner" "$repo" "$image" "$tag"
 
     # ...that have not been added yet
     grep -q "$owner/$repo/$image/$tag" README.md || perl -0777 -pe '
