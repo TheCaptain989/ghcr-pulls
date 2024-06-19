@@ -9,7 +9,7 @@
 # check if curl, jq, and xmllint are installed
 if ! command -v curl &>/dev/null || ! command -v jq &>/dev/null || ! command -v xmllint &>/dev/null; then
     sudo apt-get update
-    sudo apt-get install curl jq libxml2 -y
+    sudo apt-get install curl jq libxml2-utils -y
 fi
 
 # clean pkg.txt
@@ -35,6 +35,7 @@ while IFS= read -r line; do
     #fi
 
     # use xmllint and walk through version pages if querying tags
+    xmllint --version
     if [ -n "$tag" ]; then
       pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Pzo '(?<=<em class="current" data-total-pages=")\d*')
       [ -z "$pages" ] && pages=1
@@ -44,7 +45,7 @@ while IFS= read -r line; do
          raw_pulls=$(xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" page.html 2>/dev/null | tr -d '\f\n, ')
          printf "$i"
          [ -n "$raw_pulls" ] && break
-         [ "$i" -ne "$pages" ] && printf ","
+         [ "$i" -ne "$pages" ] && printf "," || (printf "COULD NOT FIND TAG %s" "$tag"; raw_pulls=0)
       done
       printf "\n"
       rm page.html
