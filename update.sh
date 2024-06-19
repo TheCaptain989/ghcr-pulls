@@ -9,7 +9,7 @@
 # check if curl, jq, and xmllint are installed
 if ! command -v curl &>/dev/null || ! command -v jq &>/dev/null || ! command -v xmllint &>/dev/null; then
     sudo apt-get update
-    sudo apt-get install curl jq xmllint -y
+    sudo apt-get install curl jq libxml2 -y
 fi
 
 # clean pkg.txt
@@ -29,18 +29,20 @@ while IFS= read -r line; do
     [ -f index.json ] || echo "[]" >index.json
 
     # manual update: skip if the package is already in the index; the rest are updated on a consistent basis
-    if [ "$1" = "1" ]; then
-        jq -e --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" '
-            any(.[]; .owner == $owner and .repo == $repo and .image == $image and .tag == $tag)' index.json >/dev/null && continue || :
-    fi
+    #if [ "$1" = "1" ]; then
+    #    jq -e --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" '
+    #        any(.[]; .owner == $owner and .repo == $repo and .image == $image and .tag == $tag)' index.json >/dev/null && continue || :
+    #fi
 
     # use xmllint and walk through version pages if querying tags
     if [ -n "$tag" ]; then
       pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Pzo '(?<=<em class="current" data-total-pages=")\d*')
       [ -z "$pages" ] && pages=1
+      echo "Total Pages: $pages"
       for i in $(seq 1 "$pages"); do
          curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" >page.html
          raw_pulls=$(xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" page.html 2>/dev/null | tr -d '\f\n, ')
+         echo "Page $i: $owner/$repo/$image/$tag = $raw_pulls"
          [ -n "$raw_pulls" ] && break
       done
       rm page.html
@@ -48,11 +50,13 @@ while IFS= read -r line; do
         # get the number of pulls, skipping nans
         html=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image")
         raw_pulls=$(echo -e "$html" | grep -Pzo '(?<=Total downloads</span>\n          <h3 title=")\d*')
+        echo "Pulls: $owner/$repo/$image = $raw_pulls"
     fi
     [[ "$raw_pulls" =~ ^[0-9]+$ ]] || continue
     #pulls=$(echo "$raw_pulls" | awk '{ split("k M B T P E Z Y", v); s=0; while( $1>999.9 ) { $1/=1000; s++ } print int($1*10)/10 v[s] }') || pulls=-1
     pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
+    echo "Pretty Pulls: $owner/$repo/$image/$tag = $pulls ($date)"
 
     jq --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" --arg pulls "$pulls" --arg raw_pulls "$raw_pulls" --arg date "$date" '
         if . == [] then
