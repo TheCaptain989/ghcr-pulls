@@ -36,18 +36,16 @@ while IFS= read -r line; do
 
     # use xmllint and walk through version pages if querying tags
     if [ -n "$tag" ]; then
-      pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Pzo '(?<=data-total-pages=")\d*')
+      pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Po '(?<=data-total-pages=")\d*')
       [ -z "$pages" ] && pages=1
-      printf "Crawling $owner/$repo/$image/$tag total pages $pages : "
+      printf "Crawling $pages pages of $owner/$repo/$image for tag $tag : "
       for i in $(seq 1 "$pages"); do
-         curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" >page.html
-         raw_pulls=$(xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" page.html 2>/dev/null | tr -d '\f\n, ')
+         raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" | xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" - 2>/dev/null | tr -d '\f\n, ')
          printf "$i"
          [ -n "$raw_pulls" ] && break
          [ "$i" -ne "$pages" ] && printf "," || (printf "COULD NOT FIND TAG %s" "$tag"; raw_pulls=0)
       done
       printf "\n"
-      rm page.html
     else
         # get the number of pulls, skipping nans
         html=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image")
