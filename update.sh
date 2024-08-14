@@ -26,7 +26,7 @@ while IFS= read -r line; do
     repo=$(echo "$line" | cut -d'/' -f2)
     image=$(echo "$line" | cut -d'/' -f3)
     tag=$(echo "$line" | cut -d'/' -f4)
-    [ -f index.json ] || echo "[]" >index.json
+    unset raw_pulls
 
     # manual update: skip if the package is already in the index; the rest are updated on a consistent basis
     #if [ "$1" = "1" ]; then
@@ -36,21 +36,22 @@ while IFS= read -r line; do
 
     # use xmllint and walk through version pages if querying tags
     if [ -n "$tag" ]; then
-      pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Po '(?<=data-total-pages=")\d*')
-      [ -z "$pages" ] && pages=1
-      printf "Crawling $pages pages of $owner/$repo/$image for tag $tag : "
-      for i in $(seq 1 "$pages"); do
-         raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" | xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" - 2>/dev/null | tr -d '\f\n, ')
-         printf "$i"
-         [ -n "$raw_pulls" ] && break
-         [ "$i" -ne "$pages" ] && printf "," || (printf "COULD NOT FIND TAG %s" "$tag"; raw_pulls=0)
-      done
-      printf "\n"
+        pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Po '(?<=data-total-pages=")\d*')
+        [ -z "$pages" ] && pages=1
+        printf "Crawling $pages pages of $owner/$repo/$image for tag $tag : "
+        for i in $(seq 1 "$pages"); do
+            raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" | xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" - 2>/dev/null | tr -d '\f\n, ')
+            printf "$i"
+            [ -n "$raw_pulls" ] && break
+            [ "$i" -ne "$pages" ] && printf "," || { printf "\nERROR: Could not find tag %s" "$tag"; continue 2; }
+        done
+        printf "\n"
     else
         # get the number of pulls, skipping nans
         html=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image")
         raw_pulls=$(echo -e "$html" | grep -Pzo '(?<=Total downloads</span>\n          <h3 title=")\d*')
     fi
+    [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for tag %s" "$tag"; continue; }
     pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
     printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
@@ -62,7 +63,7 @@ while IFS= read -r line; do
             map(if .owner == $owner and .repo == $repo and .image == $image and .tag == $tag then .pulls = $pulls | .raw_pulls = $raw_pulls | .raw_pulls_all[($date)] = $raw_pulls else . end)
             + (if any(.[]; .owner == $owner and .repo == $repo and .image == $image and .tag == $tag) then [] else [{owner: $owner, repo: $repo, image: $image, tag: $tag, pulls: $pulls, raw_pulls: $raw_pulls, raw_pulls_all: {($date): $raw_pulls}}] end)
         end' index.json >index.tmp.json
-    mv index.tmp.json index.json
+    [ -s index.tmp.json ] && mv index.tmp.json index.json || { printf "ERROR: Empty JSON file. Exiting."; exit 1; }
 done <pkg.txt
 
 # sort the index by the number of raw_pulls greatest to smallest
@@ -81,25 +82,23 @@ for i in $(jq -r '.[] | @base64' index.json); do
     repo=$(_jq '.repo')
     image=$(_jq '.image')
     tag=$(_jq '.tag')
-    pulls=$(_jq '.pulls')
-    raw_pulls=$(_jq '.raw_pulls')
     export owner repo image tag
 
     # ...that have not been added yet
     grep -q "$owner/$repo/$image/$tag" README.md || perl -0777 -pe '
-    my $owner = $ENV{"owner"};
-    my $repo = $ENV{"repo"};
-    my $image = $ENV{"image"};
-    my $tag = $ENV{"tag"};
+        my $owner = $ENV{"owner"};
+        my $repo = $ENV{"repo"};
+        my $image = $ENV{"image"};
+        my $tag = $ENV{"tag"};
 
-    # decode percent-encoded characters
-    for ($owner, $repo, $image, $tag) {
-        s/%/%25/g;
-    }
-    my $label = $image;
-    $label =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+        # decode percent-encoded characters
+        for ($owner, $repo, $image, $tag) {
+            s/%/%25/g;
+        }
+        my $label = $image;
+        $label =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
 
-    # add new badge
-    s/\n\n(\[!\[.*)\n\n/\n\n$1 \[!\[$owner\/$repo\/$image\/$tag\]\(https:\/\/img.shields.io\/badge\/dynamic\/json\?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json\&query=%24%5B%3F(%40.owner%3D%3D%22$owner%22%20%26%26%20%40.repo%3D%3D%22$repo%22%20%26%26%20%40.image%3D%3D%22$image%22%20%26%26%20%40.tag%3D%3D%22$tag%22)%5D.pulls\&label=$image\/$tag\)\]\(https:\/\/github.com\/$owner\/$repo\/pkgs\/container\/$image\)\n\n/g;
-' README.md > README.tmp && [ -f README.tmp ] && mv README.tmp README.md || :
+        # add new badge
+        s/\n\n(\[!\[.*)\n\n/\n\n$1 \[!\[$owner\/$repo\/$image\/$tag\]\(https:\/\/img.shields.io\/badge\/dynamic\/json\?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json\&query=%24%5B%3F(%40.owner%3D%3D%22$owner%22%20%26%26%20%40.repo%3D%3D%22$repo%22%20%26%26%20%40.image%3D%3D%22$image%22%20%26%26%20%40.tag%3D%3D%22$tag%22)%5D.pulls\&label=$image\/$tag\)\]\(https:\/\/github.com\/$owner\/$repo\/pkgs\/container\/$image\)\n\n/g;
+    ' README.md > README.tmp && [ -f README.tmp ] && mv README.tmp README.md || :
 done
