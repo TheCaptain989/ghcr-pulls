@@ -30,12 +30,6 @@ while IFS= read -r line; do
     tag=$(echo "$line" | cut -d'/' -f4)
     unset raw_pulls
 
-    # manual update: skip if the package is already in the index; the rest are updated on a consistent basis
-    #if [ "$1" = "1" ]; then
-    #    jq -e --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" '
-    #        any(.[]; .owner == $owner and .repo == $repo and .image == $image and .tag == $tag)' index.json >/dev/null && continue || :
-    #fi
-
     # use xmllint and walk through version pages if querying tags
     if [ -n "$tag" ]; then
         pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Po '(?<=data-total-pages=")\d*')
@@ -45,14 +39,15 @@ while IFS= read -r line; do
             raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" | xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" - 2>/dev/null | tr -d '\f\n, ')
             printf "$i"
             [ -n "$raw_pulls" ] && break
-            [ "$i" -ne "$pages" ] && printf "," || { printf "\nERROR: Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image"; : $((error_count++)); continue 2; }
+            [ "$i" -ne "$pages" ] && printf "," || { printf "\nERROR: Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image"; ((error_count++)); continue 2; }
         done
         printf "\n"
     else
         # get the number of pulls,
         raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image" | grep -Po '(?<=Total downloads</span>\n          <h3 title=")\d*')
+        curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image" >temp.html
     fi
-    [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; : $((error_count++)); continue; }
+    [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; ((error_count++)); continue; }
     pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
     printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
@@ -104,4 +99,4 @@ for i in $(jq -r '.[] | @base64' index.json); do
     ' README.md > README.tmp && [ -f README.tmp ] && mv README.tmp README.md || :
 done
 
-[ $error_count -ne 0 ] && exit $error_count
+exit $error_count
