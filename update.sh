@@ -6,6 +6,8 @@
 #
 # shellcheck disable=SC2015
 
+error_count=0
+
 # check if curl, jq, and xmllint are installed
 if ! command -v curl &>/dev/null || ! command -v jq &>/dev/null || ! command -v xmllint &>/dev/null; then
     sudo apt-get update
@@ -43,15 +45,14 @@ while IFS= read -r line; do
             raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" | xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" - 2>/dev/null | tr -d '\f\n, ')
             printf "$i"
             [ -n "$raw_pulls" ] && break
-            [ "$i" -ne "$pages" ] && printf "," || { printf "\nERROR: Could not find tag %s" "$tag"; continue 2; }
+            [ "$i" -ne "$pages" ] && printf "," || { printf "\nERROR: Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image"; : $((error_count++)); continue 2; }
         done
         printf "\n"
     else
-        # get the number of pulls, skipping nans
-        html=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image")
-        raw_pulls=$(echo -e "$html" | grep -Pzo '(?<=Total downloads</span>\n          <h3 title=")\d*')
+        # get the number of pulls,
+        raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image" | grep -Po '(?<=Total downloads</span>\n          <h3 title=")\d*')
     fi
-    [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for tag %s" "$tag"; continue; }
+    [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; : $((error_count++)); continue; }
     pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
     printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
@@ -102,3 +103,5 @@ for i in $(jq -r '.[] | @base64' index.json); do
         s/\n\n(\[!\[.*)\n\n/\n\n$1 \[!\[$owner\/$repo\/$image\/$tag\]\(https:\/\/img.shields.io\/badge\/dynamic\/json\?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json\&query=%24%5B%3F(%40.owner%3D%3D%22$owner%22%20%26%26%20%40.repo%3D%3D%22$repo%22%20%26%26%20%40.image%3D%3D%22$image%22%20%26%26%20%40.tag%3D%3D%22$tag%22)%5D.pulls\&label=$image\/$tag\)\]\(https:\/\/github.com\/$owner\/$repo\/pkgs\/container\/$image\)\n\n/g;
     ' README.md > README.tmp && [ -f README.tmp ] && mv README.tmp README.md || :
 done
+
+[ $error_count -ne 0 ] && exit $error_count
