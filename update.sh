@@ -39,7 +39,7 @@ while IFS= read -r line; do
             raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" | xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" - 2>/dev/null | tr -d '\f\n, ')
             printf "$i"
             [ -n "$raw_pulls" ] && break
-            [ "$i" -ne "$pages" ] && printf "," || { printf "\nERROR: Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image"; ((error_count++)); continue 2; }
+            [ "$i" -ne "$pages" ] && printf "," || { printf "\nERROR: Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image"; printf "ERROR: Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image" >> $GITHUB_STEP_SUMMARY; ((error_count++)); continue 2; }
         done
         printf "\n"
     else
@@ -47,9 +47,10 @@ while IFS= read -r line; do
         raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image" | grep -Po '(?<=Total downloads</span>\n          <h3 title=")\d*')
         curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image" >temp.html
     fi
-    [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; ((error_count++)); continue; }
+    [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image" >> $GITHUB_STEP_SUMMARY; ((error_count++)); continue; }
     pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
+    printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
     printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date" >> $GITHUB_STEP_SUMMARY
 
     jq --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" --arg pulls "$pulls" --arg raw_pulls "$raw_pulls" --arg date "$date" '
@@ -59,7 +60,7 @@ while IFS= read -r line; do
             map(if .owner == $owner and .repo == $repo and .image == $image and .tag == $tag then .pulls = $pulls | .raw_pulls = $raw_pulls | .raw_pulls_all[($date)] = $raw_pulls else . end)
             + (if any(.[]; .owner == $owner and .repo == $repo and .image == $image and .tag == $tag) then [] else [{owner: $owner, repo: $repo, image: $image, tag: $tag, pulls: $pulls, raw_pulls: $raw_pulls, raw_pulls_all: {($date): $raw_pulls}}] end)
         end' index.json >index.tmp.json
-    [ -s index.tmp.json ] && mv index.tmp.json index.json || { printf "ERROR: Empty JSON file. Exiting."; exit 1; }
+    [ -s index.tmp.json ] && mv index.tmp.json index.json || { printf "ERROR: Empty JSON file. Exiting."; printf "ERROR: Empty JSON file. Exiting." >> $GITHUB_STEP_SUMMARY; exit 1; }
 done <pkg.txt
 
 # sort the index by the number of raw_pulls greatest to smallest
