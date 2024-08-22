@@ -50,7 +50,7 @@ while IFS= read -r line; do
     [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; ((error_count++)); continue; }
     pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
-    printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
+    printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date" >> $GITHUB_STEP_SUMMARY
 
     jq --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" --arg pulls "$pulls" --arg raw_pulls "$raw_pulls" --arg date "$date" '
         if . == [] then
