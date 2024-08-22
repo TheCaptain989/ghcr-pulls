@@ -21,6 +21,8 @@ done >pkg.tmp.txt
 mv pkg.tmp.txt pkg.txt
 [ -z "$(tail -c 1 pkg.txt)" ] || echo >>pkg.txt
 
+echo "## Updating Pulls" >> $GITHUB_STEP_SUMMARY
+
 # update the index with new counts
 [ -f index.json ] || echo "[]" >index.json # create the index if it does not exist
 while IFS= read -r line; do
@@ -51,7 +53,7 @@ while IFS= read -r line; do
     pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
     printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
-    printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date" >> $GITHUB_STEP_SUMMARY
+    printf "| %s/%s/%s/%s | %s (%s) | %s |\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date" >> $GITHUB_STEP_SUMMARY
 
     jq --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" --arg pulls "$pulls" --arg raw_pulls "$raw_pulls" --arg date "$date" '
         if . == [] then
