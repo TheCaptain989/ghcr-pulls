@@ -21,7 +21,7 @@ done >pkg.tmp.txt
 mv pkg.tmp.txt pkg.txt
 [ -z "$(tail -c 1 pkg.txt)" ] || echo >>pkg.txt
 
-echo "## Updating Pulls" >> $GITHUB_STEP_SUMMARY
+echo "### Pull Counts" >> $GITHUB_STEP_SUMMARY
 echo "| Repository | Package| Tag | Pulls | Date |" >> $GITHUB_STEP_SUMMARY
 echo "| --- | --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
 
