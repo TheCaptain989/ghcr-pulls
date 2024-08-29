@@ -52,7 +52,7 @@ while IFS= read -r line; do
         curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image" >temp.html
     fi
     [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; printf "*ERROR:* No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image" >> $GITHUB_STEP_SUMMARY; ((error_count++)); continue; }
-    pulls=$(numfmt --to si --round nearest --format "%.1f" "$raw_pulls")
+    pulls=$(numfmt --to si --round nearest --format "%f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
     printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
     printf "| %s/%s | %s | %s | %s (%s) | %s |\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date" >> $GITHUB_STEP_SUMMARY
