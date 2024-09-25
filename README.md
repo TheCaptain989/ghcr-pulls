@@ -8,7 +8,7 @@ Makes the pull count badge possible for these ghcr.io packages and tags:
 
 ### Custom Badges
 
-The badges above are from [shields.io](https://shields.io/badges/dynamic-json-badge) and use these parameters:
+The badge above are from [shields.io](https://shields.io/badges/dynamic-json-badge) and use these parameters:
 
 #### URL
 
