@@ -71,37 +71,39 @@ done <pkg.txt
 jq 'sort_by(.raw_pulls | tonumber) | reverse' index.json >index.tmp.json
 mv index.tmp.json index.json
 
+# No longer viable because of JSONPath RCE vulnerability
+
 # update the README template with badges...
-[ -f README.md ] || rm -f README.md   # remove the old README
-\cp .README.md README.md              # copy the template
-for i in $(jq -r '.[] | @base64' index.json); do
-    _jq() {
-        echo "$i" | base64 --decode | jq -r "$@"
-    }
-
-    owner=$(_jq '.owner')
-    repo=$(_jq '.repo')
-    image=$(_jq '.image')
-    tag=$(_jq '.tag')
-    export owner repo image tag
-
-    # ...that have not been added yet
-    grep -q "$owner/$repo/$image/$tag" README.md || perl -0777 -pe '
-        my $owner = $ENV{"owner"};
-        my $repo = $ENV{"repo"};
-        my $image = $ENV{"image"};
-        my $tag = $ENV{"tag"};
-
-        # decode percent-encoded characters
-        for ($owner, $repo, $image, $tag) {
-            s/%/%25/g;
-        }
-        my $label = $image;
-        $label =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
-
-        # add new badge
-        s/\n\n(\[!\[.*)\n\n/\n\n$1 \[!\[$owner\/$repo\/$image\/$tag\]\(https:\/\/img.shields.io\/badge\/dynamic\/json\?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json\&query=%24%5B%3F(%40.owner%3D%3D%22$owner%22%20%26%26%20%40.repo%3D%3D%22$repo%22%20%26%26%20%40.image%3D%3D%22$image%22%20%26%26%20%40.tag%3D%3D%22$tag%22)%5D.pulls\&label=$image\/$tag\)\]\(https:\/\/github.com\/$owner\/$repo\/pkgs\/container\/$image\)\n\n/g;
-    ' README.md > README.tmp && [ -f README.tmp ] && mv README.tmp README.md || :
-done
+# [ -f README.md ] || rm -f README.md   # remove the old README
+# \cp .README.md README.md              # copy the template
+# for i in $(jq -r '.[] | @base64' index.json); do
+#     _jq() {
+#         echo "$i" | base64 --decode | jq -r "$@"
+#     }
+# 
+#     owner=$(_jq '.owner')
+#     repo=$(_jq '.repo')
+#     image=$(_jq '.image')
+#     tag=$(_jq '.tag')
+#     export owner repo image tag
+# 
+#     # ...that have not been added yet
+#     grep -q "$owner/$repo/$image/$tag" README.md || perl -0777 -pe '
+#         my $owner = $ENV{"owner"};
+#         my $repo = $ENV{"repo"};
+#         my $image = $ENV{"image"};
+#         my $tag = $ENV{"tag"};
+# 
+#         # decode percent-encoded characters
+#         for ($owner, $repo, $image, $tag) {
+#             s/%/%25/g;
+#         }
+#         my $label = $image;
+#         $label =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+# 
+#         # add new badge
+#         s/\n\n(\[!\[.*)\n\n/\n\n$1 \[!\[$owner\/$repo\/$image\/$tag\]\(https:\/\/img.shields.io\/badge\/dynamic\/json\?logo=github&url=https%3A%2F%2Fraw.githubusercontent.com%2Fthecaptain989%2Fghcr-pulls%2Fmaster%2Findex.json\&query=%24%5B$i%5D.pulls\&label=$image\/$tag\)\]\(https:\/\/github.com\/$owner\/$repo\/pkgs\/container\/$image\)\n\n/g;
+#     ' README.md > README.tmp && [ -f README.tmp ] && mv README.tmp README.md || :
+# done
 
 exit $error_count
