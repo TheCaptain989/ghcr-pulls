@@ -22,12 +22,12 @@ You can show either a pretty value like 12K or the raw number like 12345.
 
 ##### Pretty Count
 
-```http
+```text
 $.pulls
 ```
 
 ##### Raw Count
 
-```http
+```text
 $.raw_pulls
 ```
