@@ -25,7 +25,7 @@ while IFS= read -r line; do
     repo=$(echo "$line" | cut -d'/' -f2)
     image=$(echo "$line" | cut -d'/' -f3)
     tag=$(echo "$line" | cut -d'/' -f4)
-    json_file="./pages/$tag.json"
+    json_file="./docs/$tag.json"
     [ -f "$json_file" ] || echo "{}" >"$json_file" # create the index if it does not exist
     unset raw_pulls
 
