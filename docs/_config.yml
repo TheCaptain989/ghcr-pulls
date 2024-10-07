@@ -18,7 +18,7 @@ github_username:  thecaptain989
 show_downloads: false
 
 # Build settings
-theme: jekyll-theme-hacker
+# theme: jekyll-theme-hacker
 
 # Exclude from processing.
 # The following items will not be processed, by default.
