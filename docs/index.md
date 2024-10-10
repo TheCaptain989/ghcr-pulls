@@ -1,7 +1,7 @@
 ---
 layout: default
 ---
-# {{ site.title }}
+# TheCaptain989’s GHCR Pulls
 
 ## JSON Endpoint for GHCR Badges
 
