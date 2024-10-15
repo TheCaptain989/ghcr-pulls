@@ -8,7 +8,7 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: TheCaptain989's GHCR Pulls
+title: ghcr-pulls
 email: thecaptain989@protonmail.com
 description: >-
   GitHub Pages site to host JSON endpoints for custom shields.io badges.
