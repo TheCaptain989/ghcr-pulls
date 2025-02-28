@@ -2,6 +2,7 @@
 layout: default
 ---
 # TheCaptain989’s GHCR Pulls
+{% include navigation.html %}
 
 ## JSON Endpoint for GHCR Badges
 
@@ -34,5 +35,3 @@ $.pulls
 ```text
 $.raw_pulls
 ```
-
-{% include navigation.html %}
