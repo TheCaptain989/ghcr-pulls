@@ -5,7 +5,7 @@ async function loadJSON(url) {
     }
   
     const data = await response.json();
-    console.log(data.tag);
+    //console.log(data.tag);
     return data;
 }
   

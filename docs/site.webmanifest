@@ -4,21 +4,24 @@
 {
   "name": "TheCaptain989’s GHCR Pulls",
   "short_name": "{{ site.title }}",
+  "description": "{{ site.description }}",
+  "scope": "{{ site.baseurl }}",
+  "lang": "en-US",
   "icons": [
     {
       "src": "{{ '/web-app-manifest-192x192.png' | relative_url }}",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "{{ '/web-app-manifest-512x512.png' | relative_url }}",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "theme_color": "#B5E853",
   "background_color": "#171717",
-  "display": "browser"
+  "display": "standalone"
 }
