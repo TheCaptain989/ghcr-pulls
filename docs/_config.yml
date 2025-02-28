@@ -16,6 +16,7 @@ description: >-
   easily gathered any other way.
 github_username:  thecaptain989
 show_downloads: false
+baseurl: "/ghcr-pulls"
 
 # Build settings
 theme: jekyll-theme-hacker
