@@ -9,10 +9,12 @@
 error_count=0
 
 # check if curl, jq, and xmllint are installed
+echo "::group::Checking for and installing dependencies"
 if ! command -v curl &>/dev/null || ! command -v jq &>/dev/null || ! command -v xmllint &>/dev/null; then
     sudo apt-get update
     sudo apt-get install curl jq libxml2-utils -y
 fi
+echo "::endgroup::"
 
 # Prepare GitHub acctions summary
 echo "### Pull Counts" >> $GITHUB_STEP_SUMMARY
@@ -33,12 +35,12 @@ while IFS= read -r line; do
     if [ -n "$tag" ]; then
         pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Po '(?<=data-total-pages=")\d*')
         [ -z "$pages" ] && pages=1
-        printf "Crawling $pages pages of $owner/$repo/$image for tag $tag : "
+        printf "\u001b[34mCrawling $pages pages of $owner/$repo/$image for tag $tag : "
         for i in $(seq 1 "$pages"); do
             raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" | xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" - 2>/dev/null | tr -d '\f\n, ')
             printf "$i"
             [ -n "$raw_pulls" ] && break
-            [ "$i" -ne "$pages" ] && printf "," || { printf "\nERROR: Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image"; printf "*ERROR:* Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image" >> $GITHUB_STEP_SUMMARY; ((error_count++)); continue 2; }
+            [ "$i" -ne "$pages" ] && printf "," || { printf "\n::error title=Unknown Tag::Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image"; printf "*ERROR:* Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image" >> $GITHUB_STEP_SUMMARY; ((error_count++)); continue 2; }
         done
         printf "\n"
     else
@@ -46,7 +48,7 @@ while IFS= read -r line; do
         raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image" | grep -Po '(?<=Total downloads</span>\n          <h3 title=")\d*')
         curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image" >temp.html
     fi
-    [ -z "$raw_pulls" ] && { printf "ERROR: No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; printf "*ERROR:* No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image" >> $GITHUB_STEP_SUMMARY; ((error_count++)); continue; }
+    [ -z "$raw_pulls" ] && { printf "::error title=No Pull Counts::No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image"; printf "*ERROR:* No raw pull counts found for %s/%s/%s\n" "$owner" "$repo" "$image" >> $GITHUB_STEP_SUMMARY; ((error_count++)); continue; }
     pulls=$(numfmt --to si --round nearest --format "%f" "$raw_pulls")
     date=$(date -u +"%Y-%m-%d")
     printf "%s/%s/%s/%s = %s (%s) %s\n" "$owner" "$repo" "$image" "$tag" "$raw_pulls" "$pulls" "$date"
