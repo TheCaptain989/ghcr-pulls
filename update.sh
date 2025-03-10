@@ -35,6 +35,8 @@ while IFS= read -r line; do
     if [ -n "$tag" ]; then
         pages=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions" | grep -Po '(?<=data-total-pages=")\d*')
         [ -z "$pages" ] && pages=1
+        # Testing if the error prints correctly
+        printf "\n::error title=Unknown Tag::Could not find tag %s in %s/%s/%s\n" "$tag" "$owner" "$repo" "$image"
         printf "\u001b[34mCrawling $pages pages of $owner/$repo/$image for tag $tag : "
         for i in $(seq 1 "$pages"); do
             raw_pulls=$(curl -sSLNZ "https://github.com/$owner/$repo/pkgs/container/$image/versions?page=$i" | xmllint --html --recover --xpath "//a[text()=\"$tag\"]/../../../div[2]/span/text()" - 2>/dev/null | tr -d '\f\n, ')
