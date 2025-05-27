@@ -1,9 +1,10 @@
-name: manual update
+name: Manual update
 
-on: [ workflow_dispatch ]
+on: workflow_dispatch
 
 jobs:
     update:
+        name: Update Job
         runs-on: ubuntu-latest
 
         permissions:

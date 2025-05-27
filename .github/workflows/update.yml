@@ -1,4 +1,4 @@
-name: update
+name: Automatic update
 
 on:
     schedule:
@@ -6,6 +6,7 @@ on:
 
 jobs:
     update:
+        name: Update Job
         runs-on: ubuntu-latest
 
         permissions:
