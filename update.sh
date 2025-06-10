@@ -79,11 +79,16 @@ while IFS= read -r line; do
 
     # Update the index file
     jq --arg owner "$owner" --arg repo "$repo" --arg image "$image" --arg tag "$tag" --arg pulls "$pulls" --arg raw_pulls "$raw_pulls" --arg date "$date" '
+        def days_ago(n): ($date | strptime("%Y-%m-%d")| mktime) - (n * 86400);
+
         if . == {} then
             {owner: $owner, repo: $repo, image: $image, tag: $tag, pulls: $pulls, raw_pulls: $raw_pulls, raw_pulls_all: {($date): $raw_pulls}}
         else
             .pulls = $pulls | .raw_pulls = $raw_pulls | .raw_pulls_all[($date)] = $raw_pulls
-        end' "$json_file" >"$temp_file"
+        end |
+        .raw_pulls_all |= with_entries(
+            select((.key | strptime("%Y-%m-%d") | mktime) >= days_ago(365))
+        )' "$json_file" >"$temp_file"
     # Display an error if the temporary index file is empty
     if [ ! -s "$temp_file" ]; then
         printf "::error title=Empty JSON::Empty JSON file. Exiting.\n"
