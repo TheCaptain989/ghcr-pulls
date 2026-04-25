@@ -22,7 +22,7 @@ concurrency:
 jobs:
   # Build job
   build:
-    name: Build site with Jekyll
+    name: Build site
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -39,6 +39,7 @@ jobs:
 
   # Deployment job
   deploy:
+    name: Deploy site
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
